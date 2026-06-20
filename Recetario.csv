@@ -1,0 +1,9 @@
+ID,nombre,ingredientes,pasos,tiempoPreparacion
+1,Arroz con pollo,"arroz,pollo,cebolla","Cortar pollo,Sofreir cebolla,Agregar arroz,Cocinar por 20 minutos",45
+2,Tortilla de cebolla,"huevo,cebolla,aceite,sal","Cortar cebolla,Batir huevos,Freir cebolla,Cocinar tortilla",20
+3,Ensalada fresca,"lechuga,tomate,cebolla,aceite,sal","Lavar verduras,Cortar tomate,Mezclar ingredientes,Agregar aceite",15
+4,Panqueques,"harina,huevo,leche,azucar","Mezclar harina y huevo,Agregar leche,Cocinar en sarten,Servir",25
+5,Pollo al ajo,"pollo,ajo,aceite,sal,pimienta","Cortar pollo,Picar ajo,Dorar pollo,Agregar ajo,Cocinar por 15 minutos",35
+6,Arroz salteado,"arroz,huevo,cebolla,zanahoria,aceite","Cortar verduras,Saltear cebolla,Agregar arroz,Incorporar huevo,Servir",30
+7,Pastas con tomate,"pasta,tomate,ajo,aceite,sal","Hervir pasta,Picar tomate,Saltear ajo,Mezclar con pasta",25
+8,Sopa de verduras,"zanahoria,cebolla,papa,agua,sal","Cortar verduras,Hervir agua,Agregar verduras,Cocinar por 30 minutos",40
