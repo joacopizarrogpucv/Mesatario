@@ -1,0 +1,6 @@
+programa
+codigo
+*.exe
+*.out
+.vscode/
+.local/
