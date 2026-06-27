@@ -8,6 +8,8 @@
 #include <stdbool.h>
 #include <time.h>
 
+// Estructuras
+// Estructura que representa una receta cargada desde el CSV o creada por el usuario.
 typedef struct 
 {
   int ID;
@@ -19,17 +21,20 @@ typedef struct
   int cantidadCalificaciones;
   List *usuariosCalificadores;
 } Receta;
+// Estructura temporal usada para guardar los resultados de una búsqueda por ingredientes.
 typedef struct
 {
   Receta *receta;
   int coincidencias;
   float porcentaje;
 } ResultadoBusqueda;
+ // Estructura que representa una calificación realizada por el usuario activo a una receta específica.
 typedef struct
 {
   int ID;
   float calificacion;
 } CalificacionRealizada;
+// Estructura que representa al usuario activo durante la ejecución del programa.
 typedef struct 
 {
   char nombre[30];
@@ -37,6 +42,7 @@ typedef struct
   List *tuRecetario;
   List *calificacionesRealizadas;
 } Usuario;
+// Estructura principal que almacena las listas, mapas y estado general del recetario.
 typedef struct 
 {
   List *recetas;
@@ -47,10 +53,11 @@ typedef struct
   bool estaRegistrado;
 } Recetario;
 
-//funciones generales
+// Funciones generales
+// Muestra el menú principal de la aplicación.
 void mostrarMenuPrincipal() 
 {
-  limpiarPantalla();
+  limpiarPantalla(); 
   puts("========================================");
   puts("               Mesatario");
   puts("========================================");
@@ -64,16 +71,19 @@ void mostrarMenuPrincipal()
   puts("7) Cerrar Recetario");
 }
 
+// Compara dos claves de tipo string para el funcionamiento del mapa.
 int is_equal_str(void *key1, void *key2) 
 {
   return strcmp((char *)key1, (char *)key2) == 0;
 }
 
+// Compara dos claves de tipo entero para el funcionamiento del mapa.
 int is_equal_int(void *key1, void *key2) {
-  return *(int *)key1 == *(int *)key2; // Compara valores enteros directamente
+  return *(int *)key1 == *(int *)key2;
 }
 
-//funciones programa
+// Funciones programa
+// Permite avanzar y retroceder por los pasos de una receta usando pilas.
 void verInstrucciones(Receta *receta){
   if (receta == NULL || list_size(receta->pasos) == 0){
     puts("Esta receta no tiene instrucciones registradas.");
@@ -143,6 +153,7 @@ void verInstrucciones(Receta *receta){
   free(auxiliar);
 }
 
+// Muestra la información básica de una receta.
 void menuR(Receta *data){
   printf("=======================================================================\n");
   printf("                      %s\n", data->nombre);
@@ -158,6 +169,7 @@ void menuR(Receta *data){
   }
 }
 
+// Permite al usuario registrado calificar una receta o actualizar una calificación anterior.
 void calificarReceta(Receta *receta, Recetario *r){
   limpiarPantalla();
   if(!r->estaRegistrado)
@@ -208,6 +220,7 @@ void calificarReceta(Receta *receta, Recetario *r){
   puts("Califación agregada correctamente.");
 }
 
+// Muestra una receta y permite ver instrucciones o calificarla.
 void mostrarReceta(Receta *data, Recetario *r){
   char opcion;
   do 
@@ -233,6 +246,7 @@ void mostrarReceta(Receta *data, Recetario *r){
     } while (opcion != '0');
 }
 
+// Carga las calificaciones históricas desde Calificaciones.csv.
 void cargarCalificaciones(Recetario *r){
   FILE *archivo = fopen("Calificaciones.csv", "r");
   if (archivo == NULL) 
@@ -264,6 +278,7 @@ void cargarCalificaciones(Recetario *r){
     fclose(archivo);
 }
 
+// Carga recetas desde Recetario.csv y construye los mapas por ID e ingrediente.
 void cargarRecetario(Recetario *r){
   r->recetas = list_create();
   r->recetasPorIngrediente = map_create(is_equal_str);
@@ -319,6 +334,7 @@ void cargarRecetario(Recetario *r){
   printf("Recetas cargadas: %d\n", list_size(r->recetas));
 }
 
+// Libera la memoria usada por los resultados temporales de búsqueda.
 void liberarResultadosBusqueda(List *resultados){
   ResultadoBusqueda *resultado = list_first(resultados);
   while (resultado != NULL)
@@ -330,6 +346,7 @@ void liberarResultadosBusqueda(List *resultados){
   free(resultados);
 }
 
+// Libera una lista que sus elementos son strings reservados dinámicamente.
 void liberarListaStrings(List *lista){
   if (lista == NULL) return;
   char *texto = list_first(lista);
@@ -344,6 +361,7 @@ void liberarListaStrings(List *lista){
 
 
 //2
+// Busca si una receta ya fue agregada a la lista temporal de resultados.
 ResultadoBusqueda *buscarResultado(List *resultados, Receta *receta){
   ResultadoBusqueda *actual = list_first(resultados);
   while (actual != NULL)
@@ -356,6 +374,7 @@ ResultadoBusqueda *buscarResultado(List *resultados, Receta *receta){
   return NULL;
 }
 
+// Verifica si un ingrediente ya existe dentro de una lista.
 bool ingredienteEstaEnLista(List *lista, const char *ingrediente){
   char *actual = list_first(lista);
   while (actual != NULL){
@@ -367,17 +386,21 @@ bool ingredienteEstaEnLista(List *lista, const char *ingrediente){
   return false;
 }
 
+// Genera resultados de búsqueda a partir de una lista de ingredientes.
 List *generarResultadosBusqueda(Recetario *r, List *ingredientesBuscados){
   List *resultados = list_create();
   List *ingredientesProcesados = list_create();
   char *ingrediente = list_first(ingredientesBuscados);
+
+  // Se evita procesar dos veces el mismo ingrediente.
   while(ingrediente != NULL){
     if (ingredienteEstaEnLista(ingredientesProcesados, ingrediente)){
       ingrediente = list_next(ingredientesBuscados);
       continue;
     }
-    list_pushBack(ingredientesProcesados, ingrediente);
+    list_pushBack(ingredientesProcesados, ingrediente); // Se guarda el ingrediente como ya procesado para evitar duplicados.
     
+    // Se busca el ingrediente en el mapa para obtener las recetas asociadas.
     MapPair *parIngrediente = map_search(r->recetasPorIngrediente, ingrediente);
     if (parIngrediente == NULL){
       printf("%s no existe en el recetario.\n", ingrediente);
@@ -390,6 +413,7 @@ List *generarResultadosBusqueda(Recetario *r, List *ingredientesBuscados){
       {
         ResultadoBusqueda *resultado = buscarResultado(resultados, receta);
 
+        // Si la receta aún no está en los resultados, se crea un nuevo registro temporal.
         if (resultado == NULL){
           resultado = (ResultadoBusqueda *)malloc(sizeof(ResultadoBusqueda));
           resultado->receta = receta;
@@ -397,6 +421,7 @@ List *generarResultadosBusqueda(Recetario *r, List *ingredientesBuscados){
           resultado->porcentaje = 0.0f;
           list_pushBack(resultados, resultado);
         }
+        // Si la receta ya estaba en resultados, se aumenta su cantidad de coincidencias.
         else{
           resultado->coincidencias++;
         }
@@ -411,7 +436,7 @@ List *generarResultadosBusqueda(Recetario *r, List *ingredientesBuscados){
   while (resultado != NULL){
     int totalIngredientes = list_size(resultado->receta->ingredientes);
 
-    resultado->porcentaje = ((float)resultado->coincidencias * 100.0f) / totalIngredientes;
+    resultado->porcentaje = ((float)resultado->coincidencias * 100.0f) / totalIngredientes; // Se calcula el porcentaje de coincidencia respecto al total de ingredientes de la receta.
 
     resultado = list_next(resultados);
   }
@@ -420,6 +445,7 @@ List *generarResultadosBusqueda(Recetario *r, List *ingredientesBuscados){
   return resultados;
 }
 
+// Ordena los resultados por porcentaje, coincidencias y calificación promedio.
 void ordenarResultados(ResultadoBusqueda **arreglo, int cantidad){
   for (int i = 0; i < cantidad - 1; i++){
     for (int k = 0; k < cantidad - 1 - i; k++){
@@ -445,6 +471,7 @@ void ordenarResultados(ResultadoBusqueda **arreglo, int cantidad){
   }
 }
 
+// Cuenta los ingredientes que faltan para preparar una receta.
 int contarFaltantes(Receta *receta, List *ingredientesBuscados){
   int faltantes = 0;
   char *ingrediente = list_first(receta->ingredientes);
@@ -457,6 +484,7 @@ int contarFaltantes(Receta *receta, List *ingredientesBuscados){
   return faltantes;
 }
 
+// Muestra los ingredientes faltantes para una receta.
 void mostrarFaltantes(Receta *receta, List *ingredientesBuscados){
   int cantidadFaltantes = contarFaltantes(receta, ingredientesBuscados);
   if (cantidadFaltantes == 0){
@@ -483,6 +511,7 @@ void mostrarFaltantes(Receta *receta, List *ingredientesBuscados){
   printf("\n");
 }
 
+// Busca recetas según ingredientes ingresados y muestra resultados paginados.
 void buscarReceta(Recetario *r){
   limpiarPantalla();
   
@@ -501,15 +530,17 @@ void buscarReceta(Recetario *r){
     return;
   }
   int cantidadResultados = list_size(resultados);
+
+  // Se copian los resultados a un arreglo temporal para poder ordenarlos.
   ResultadoBusqueda **arreglo = malloc(sizeof(ResultadoBusqueda *) * cantidadResultados);
   ResultadoBusqueda *resultado = list_first(resultados);
   for (int i = 0; i < cantidadResultados; i++){
     arreglo[i] = resultado;
     resultado = list_next(resultados);
   }
-  
-  //MOSTRAR POR PÁGINA Y ORDENADAMENTE (separación para no perderse)
-  ordenarResultados(arreglo, cantidadResultados);
+  ordenarResultados(arreglo, cantidadResultados); // Se ordenan los resultados de mayor a menor coincidencia.
+
+  // Se muestran cinco recetas por página.
   int recetasPorPagina = 5;
   int paginaActual = 0;
   int totalPaginas = (cantidadResultados + recetasPorPagina - 1) / recetasPorPagina;
@@ -526,6 +557,8 @@ void buscarReceta(Recetario *r){
     if (fin > cantidadResultados){
       fin = cantidadResultados;
     }
+
+    // Muestra el porcentaje de coincidencia.
     int ultimoPorcentaje = -1;
     for (int i = inicio; i < fin; i++){
       int porcentajeMostrado = (int)(arreglo[i]->porcentaje + 0.5f);
@@ -552,7 +585,7 @@ void buscarReceta(Recetario *r){
         inicio + (opcion - '1');
       if (indiceSeleccionado < fin){
         limpiarPantalla(); //matias
-        mostrarReceta(arreglo[indiceSeleccionado]->receta, r);
+        mostrarReceta(arreglo[indiceSeleccionado]->receta, r); // Si el usuario selecciona una receta válida, se muestra su ficha completa.
       }
       else{
         puts("No existe una receta con ese numero en esta pagina.");
@@ -578,6 +611,7 @@ void buscarReceta(Recetario *r){
 }
 
 //3
+// Permite recorrer la revista de recetas usando pilas.
 void Revista(List *revista){
   if (revista == NULL || list_size(revista) == 0)
   {
@@ -649,6 +683,7 @@ void Revista(List *revista){
   free(auxiliar);
 }
 
+// Muestra información general del recetario.
 void mostrarMenu3(Recetario *r){
   limpiarPantalla();
   puts("========================================");
@@ -689,6 +724,7 @@ void mostrarMenu3(Recetario *r){
   free(lista);
 }
 
+// Menú de la sección de información del recetario.
 void informacion(Recetario *r){
   char opcion;
   do 
@@ -724,6 +760,7 @@ void informacion(Recetario *r){
 }
 
 //4
+// Recomienda una receta usando los ingredientes de la despensa.
 void chefPersonal(Recetario *r){
   limpiarPantalla();
 
@@ -740,7 +777,8 @@ void chefPersonal(Recetario *r){
     puts("Tu despensa esta vacia. Agrega ingredientes antes de usar al Chef Personal.");
     return;
   }
-
+  
+  // El Chef Personal reutiliza la búsqueda usando los ingredientes de la despensa.
   List *resultados = generarResultadosBusqueda(r, r->usuarioActual.despensa);
   if (list_size(resultados) == 0){
     puts("No se encontraron recetas relacionadas con tu despensa.");
@@ -786,6 +824,7 @@ void chefPersonal(Recetario *r){
   liberarResultadosBusqueda(resultados);
 }
 
+// Agrega una receta personal al recetario del usuario.
 void agregarRecetaPersonal(Recetario *r){
   limpiarPantalla();
   puts("========================================");
@@ -834,6 +873,7 @@ void agregarRecetaPersonal(Recetario *r){
   printf("La receta %s fue agregada a tu recetario.\n", receta->nombre);
 }
 
+// Muestra la información básica de una receta personal.
 void mostrarRecetaPersonal(Receta *receta){
   printf("========================================\n");
   printf("%s\n", receta->nombre);
@@ -847,6 +887,7 @@ void mostrarRecetaPersonal(Receta *receta){
   }
 }
 
+// Permite recorrer las recetas personales usando pilas.
 void verRecetarioPersonal(Recetario *r){
   List *recetario = r->usuarioActual.tuRecetario;
   if (recetario == NULL || list_size(recetario) == 0){
@@ -924,6 +965,7 @@ void verRecetarioPersonal(Recetario *r){
   free(auxiliar);
 }
 
+// Elimina una receta personal seleccionada por el usuario.
 void eliminarRecetaPersonal(Recetario *r){
   List *recetario = r->usuarioActual.tuRecetario;
   if (recetario == NULL || list_size(recetario) == 0){
@@ -969,6 +1011,7 @@ void eliminarRecetaPersonal(Recetario *r){
   free(eliminada);
 }
 
+// Verifica si un ingrediente ya está guardado en la despensa.
 bool ingredienteEnDespensa(List *despensa, const char *ingrediente){
   char *actual = list_first(despensa);
   while (actual != NULL){
@@ -980,6 +1023,7 @@ bool ingredienteEnDespensa(List *despensa, const char *ingrediente){
   return false;
 }
 
+// Muestra los ingredientes guardados en la despensa.
 void mostrarDespensa(Recetario *r){
   limpiarPantalla();
 
@@ -1002,6 +1046,7 @@ void mostrarDespensa(Recetario *r){
   }
 }
 
+// Agrega un ingrediente a la despensa evitando duplicados.
 void agregarIngredienteDespensa(Recetario *r){
   limpiarPantalla();
 
@@ -1030,6 +1075,7 @@ void agregarIngredienteDespensa(Recetario *r){
   printf("%s fue agregado a tu despensa.\n", ingrediente);
 }
 
+// Menú para administrar la despensa del usuario.
 void menuDespensa(Recetario *r){
   char opcion;
 
@@ -1061,6 +1107,7 @@ void menuDespensa(Recetario *r){
   } while (opcion != '0');
 }
 
+// Menú principal del recetario personal del usuario.
 void menuTuRecetario(Recetario *r){
   if (!r->estaRegistrado)
   {
@@ -1112,6 +1159,7 @@ void menuTuRecetario(Recetario *r){
 }
 
 //5
+// Recomienda una receta aleatoria desde el recetario general.
 void recomendacionChef(Recetario *r){
   limpiarPantalla();
   
@@ -1132,6 +1180,7 @@ void recomendacionChef(Recetario *r){
 }
 
 //6
+// Registra al usuario activo y crea sus listas personales.
 void registrarUsuario(Recetario *r){
   limpiarPantalla();
 
@@ -1159,6 +1208,7 @@ void registrarUsuario(Recetario *r){
   puts("Ahora puede usar su despensa, recetario personal y calificaciones.");
 }
 
+// Función main que controla mayoritariamente el flujo de todo el programa.
 int main() 
 {
   srand(time(NULL));
